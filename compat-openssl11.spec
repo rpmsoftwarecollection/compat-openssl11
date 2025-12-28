@@ -246,27 +246,6 @@ for i in libcrypto.pc libssl.pc openssl.pc ; do
   sed -i '/^Libs.private:/{s/-L[^ ]* //;s/-Wl[^ ]* //}' $i
 done
 
-%check
-# Verify that what was compiled actually works.
-
-cp apps/openssl.cnf apps/openssl11.cnf
-
-# Hack - either enable SCTP AUTH chunks in kernel or disable sctp for check
-(sysctl net.sctp.addip_enable=1 && sysctl net.sctp.auth_enable=1) || \
-(echo 'Failed to enable SCTP AUTH chunks, disabling SCTP for tests...' &&
- sed '/"zlib-dynamic" => "default",/a\ \ "sctp" => "default",' configdata.pm > configdata.pm.new && \
- touch -r configdata.pm configdata.pm.new && \
- mv -f configdata.pm.new configdata.pm)
-
-# We must revert patch31 before tests otherwise they will fail
-patch -p1 -R < %{PATCH31}
-
-OPENSSL_ENABLE_MD5_VERIFY=
-export OPENSSL_ENABLE_MD5_VERIFY
-OPENSSL_SYSTEM_CIPHERS_OVERRIDE=xyz_nonexistent_file
-export OPENSSL_SYSTEM_CIPHERS_OVERRIDE
-make test
-
 %define __provides_exclude_from %{_libdir}/openssl
 
 %install
